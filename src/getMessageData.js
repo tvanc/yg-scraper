@@ -9,7 +9,7 @@
  * individual attachment, the subject of the email containing the attachment, the
  * author of that email, the date of the email (human formatted), and the number of files.
  *
- * Save the output into `out/partialAttachmentData.json`
+ * Save the output into `out/Messages.json`
  *
  * Then, in terminal run
  * <pre>
@@ -28,7 +28,7 @@
 
   rows.forEach(row => {
     const titleLink = row.querySelector('a[href^="/neo/groups/"]')
-    const pageUrl = titleLink.href
+    const downloadPageUrl = titleLink.href
     const subject = titleLink.textContent.trim()
     const author = row.querySelector('.yg-list-auth').textContent.trim()
     const date = row.querySelector('.yg-list-date').textContent.trim()
@@ -38,7 +38,7 @@
       subject,
       author,
       date,
-      pageUrl,
+      downloadPageUrl,
       fileCount
     })
   })
