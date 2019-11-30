@@ -6,8 +6,8 @@ const config = require('../config/config.json')
 const nameFieldSelector = 'input[name="username"]'
 const passFieldSelector = 'input[name="password"]'
 
-const count = partialAttachmentData.length;
-const failures = 0;
+const count = partialAttachmentData.length
+const failures = 0
 const options = {}
 
 if (config.executablePath) {
