@@ -6,8 +6,10 @@ const download = require('puppeteer-file-downloader').download
 /** @type array */
 const messages = require('../out/BareMessages.json')
 const config = require('../config/config.json')
-const passwordSubmitSelector = 'button[type="submit"][name="verifyPassword"]'
 const usernameSubmitSelector = 'input[type="submit"][name="signin"]'
+const passwordSubmitSelector = 'button[type="submit"][name="verifyPassword"]'
+const usernameFieldSelector = 'input[name="username"]'
+const passwordFieldSelector = 'input[name="password"]'
 const outDir = path.resolve(__dirname + `/../out`)
 const dataCacheDir = path.join(outDir, 'cache', 'attachments', 'data')
 const fileCacheDir = path.join(outDir, 'cache', 'attachments', 'files')
@@ -50,21 +52,25 @@ if (config.headless !== null && config.headless !== undefined) {
   const fullData = {}
 
   console.log('Navigating to login page...')
-  await page.goto('https://login.yahoo.com/config/login?done=https://groups.yahoo.com/neo')
+  await page.goto('https://login.yahoo.com/config/login?done=https://groups.yahoo.com/neo', {
+    waitUntil: 'networkidle0',
+    slowMo: 250
+  })
   console.log('Logging in...')
 
-  await page.waitFor(usernameSubmitSelector)
-  await page.waitFor('#ad')
+  await page.waitFor(usernameFieldSelector)
 
   console.log('Arrived at username form...')
-  await page.type('input[name="username"]', config.username)
+  await page.type(usernameFieldSelector, config.username)
+  await page.waitFor(usernameSubmitSelector + ':enabled')
   await page.click(usernameSubmitSelector)
   console.log('Submitting username form...')
 
-  await page.waitFor(passwordSubmitSelector)
+  await page.waitFor(passwordFieldSelector)
 
   console.log('Filling out password form...')
-  await page.type('input[name="password"]', config.password)
+  await page.type(passwordFieldSelector, config.password)
+  await page.waitFor(passwordSubmitSelector + ':enabled')
   await page.click(passwordSubmitSelector)
   console.log('Submitting password form...')
 
@@ -96,14 +102,14 @@ if (config.headless !== null && config.headless !== undefined) {
       slowMo: 250
     })
 
-    await page.waitFor('#right-rail-container')
+    await page.waitFor('.att-msg-preview a[href^="/neo/groups/"][data-rapid_p], #yg-error-container')
 
     // Scrape each download page for filenames and download URLs
     try {
       const moreData = await page.evaluate(() => {
         /** @type NodeList */
         const thumbContexts = document.querySelectorAll('.thumb-desc-context')
-        const messageLink = document.querySelector('.att-msg-preview > a[href^="/neo/groups/"][data-rapid_p]')
+        const messageLink = document.querySelector('.att-msg-preview a[href^="/neo/groups/"][data-rapid_p]')
         const messageId = messageLink ? messageLink.href.trim().split('/').pop() : null
 
         const files = [...thumbContexts].map(context => {
