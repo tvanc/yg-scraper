@@ -114,14 +114,14 @@ if (config.headless !== null && config.headless !== undefined) {
 
         const files = [...thumbContexts].map(context => {
           const author = context.querySelector('.thumb-meta').textContent.trim()
-          const downloadLink = context.querySelector('a[href^="https://xa.yimg.com/"]');
+          const downloadLink = context.querySelector('a[href^="https://xa.yimg.com/"]')
           const downloadUrl = downloadLink.href
-          const qsIndex = downloadUrl.indexOf('?');
+          const qsIndex = downloadUrl.indexOf('?')
 
           const fileName = downloadUrl.substring(
             downloadUrl.lastIndexOf('/') + 1,
             qsIndex !== -1 ? qsIndex : undefined
-          );
+          )
 
           return {
             fileName,
@@ -153,6 +153,7 @@ if (config.headless !== null && config.headless !== undefined) {
 
       fullData[pageId] = { ...message, ...moreData, pageId }
 
+      await fs.ensureDirSync(dataCacheDir);
       await fs.writeJson(filePath, fullData[pageId], ...jsonWriteArgs)
     } catch (exception) {
       const messageJson = JSON.stringify(message, null, 2)
@@ -163,8 +164,8 @@ if (config.headless !== null && config.headless !== undefined) {
       ++failures
     }
 
-    const percentage = (i / count * 100).toFixed(2)
-    console.log(`${percentage}% (${i}/${count})`)
+    const percentage = ((i + 1) / count * 100).toFixed(2)
+    console.log(`${percentage}% (${i + 1}/${count})`)
   }
 
   console.log('Closing browser...')
