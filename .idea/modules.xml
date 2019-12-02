@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/Mailman.iml" filepath="$PROJECT_DIR$/.idea/Mailman.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/yg-scraper.iml" filepath="$PROJECT_DIR$/.idea/yg-scraper.iml" />
     </modules>
   </component>
 </project>
