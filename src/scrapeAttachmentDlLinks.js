@@ -4,14 +4,14 @@ const path = require('path')
 const download = require('puppeteer-file-downloader').download
 
 /** @type array */
-const messages = require('../out/Messages.json')
+const messages = require('../out/BareMessages.json')
 const config = require('../config/config.json')
 const passwordSubmitSelector = 'button[type="submit"][name="verifyPassword"]'
 const usernameSubmitSelector = 'input[type="submit"][name="signin"]'
 const outDir = path.resolve(__dirname + `/../out`)
 const dataCacheDir = path.join(outDir, 'cache', 'attachments', 'data')
 const fileCacheDir = path.join(outDir, 'cache', 'attachments', 'files')
-const finalOutputPath = path.join(outDir, `Attachments.json`)
+const finalOutputPath = path.join(outDir, `MessagesWithAttachments.json`)
 
 const count = messages.length
 const options = {}
@@ -34,7 +34,7 @@ if (config.headless !== null && config.headless !== undefined) {
 }
 
 /**
- * Use data from Messages.json as a starting point.
+ * Use data from BareMessages.json as a starting point.
  *
  * Iterate over each message. Get download links for each attachment and save them as JSON.
  *
@@ -164,7 +164,7 @@ if (config.headless !== null && config.headless !== undefined) {
   console.log('Closing browser...')
   await browser.close()
 
-  console.log('Generating Attachments.json...')
+  console.log('Generating MessagesWithAttachments.json...')
   fs.writeJson(finalOutputPath, fullData, ...jsonWriteArgs)
 
   console.log('')

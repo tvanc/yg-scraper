@@ -9,7 +9,7 @@
  * individual attachment, the subject of the email containing the attachment, the
  * author of that email, the date of the email (human formatted), and the number of files.
  *
- * Save the output into `out/Messages.json`
+ * Save the output into `out/BareMessages.json`
  *
  * Then, in terminal run
  * <pre>
