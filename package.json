@@ -12,6 +12,7 @@
   "dependencies": {
     "fs-extra": "^8.1.0",
     "mkdirp": "latest",
-    "puppeteer": "^2.0.0"
+    "puppeteer": "^2.0.0",
+    "puppeteer-file-downloader": "^1.0.1"
   }
 }

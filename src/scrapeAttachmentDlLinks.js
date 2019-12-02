@@ -1,6 +1,7 @@
 const puppeteer = require('puppeteer')
 const fs = require('fs-extra')
 const path = require('path')
+const download = require('puppeteer-file-downloader').download
 
 /** @type array */
 const messages = require('../out/Messages.json')
@@ -8,7 +9,8 @@ const config = require('../config/config.json')
 const passwordSubmitSelector = 'button[type="submit"][name="verifyPassword"]'
 const usernameSubmitSelector = 'input[type="submit"][name="signin"]'
 const outDir = path.resolve(__dirname + `/../out`)
-const cacheDir = path.join(outDir, 'cache', 'attachments')
+const dataCacheDir = path.join(outDir, 'cache', 'attachments', 'data')
+const fileCacheDir = path.join(outDir, 'cache', 'attachments', 'files')
 const finalOutputPath = path.join(outDir, `Attachments.json`)
 
 const count = messages.length
@@ -78,11 +80,10 @@ if (config.headless !== null && config.headless !== undefined) {
   for (let i = 0; i < count; ++i) {
     const message = messages[i]
     const pageId = message.downloadPageUrl.split('/').pop()
-    const filePath = path.join(cacheDir, `${pageId}.json`)
-    console.log(filePath)
+    const filePath = path.join(dataCacheDir, `${pageId}.json`)
 
     if (fs.existsSync(filePath)) {
-      console.log(`Skipping #${i+1} with page id: ${pageId} (File already exists: "${filePath}")`)
+      console.log(`Skipping #${i + 1} with page id: ${pageId} (File already exists: "${filePath}")`)
 
       fullData[pageId] = await fs.readJson(filePath)
 
@@ -106,9 +107,15 @@ if (config.headless !== null && config.headless !== undefined) {
         const messageId = messageLink ? messageLink.href.trim().split('/').pop() : null
 
         const files = [...thumbContexts].map(context => {
-          const fileName = context.querySelector('.thumb-title').textContent.trim()
           const author = context.querySelector('.thumb-meta').textContent.trim()
-          const downloadUrl = context.querySelector('a[href^="https://xa.yimg.com/"]').href
+          const downloadLink = context.querySelector('a[href^="https://xa.yimg.com/"]');
+          const downloadUrl = downloadLink.href
+          const qsIndex = downloadUrl.indexOf('?');
+
+          const fileName = downloadUrl.substring(
+            downloadUrl.lastIndexOf('/') + 1,
+            qsIndex !== -1 ? qsIndex : undefined
+          );
 
           return {
             fileName,
@@ -119,6 +126,24 @@ if (config.headless !== null && config.headless !== undefined) {
 
         return { messageId, files }
       })
+
+      for (const file of moreData.files) {
+        const pageDir = path.join(fileCacheDir, pageId)
+        const to = path.join(pageDir, file.fileName)
+
+        if (fs.existsSync(to)) {
+          console.log(`File already cached ${file.downloadUrl} => ${to}`)
+        } else {
+          fs.ensureDirSync(pageDir)
+          console.log(`Downloading ${file.downloadUrl} => ${to}`)
+          file.localPath = to
+          await download({
+            file: file.downloadUrl,
+            onPage: page,
+            to
+          })
+        }
+      }
 
       fullData[pageId] = { ...message, ...moreData, pageId }
 
