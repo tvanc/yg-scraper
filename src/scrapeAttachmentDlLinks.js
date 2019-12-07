@@ -1,16 +1,17 @@
 const puppeteer = require('puppeteer')
 const path = require('path')
-const download = require('puppeteer-file-downloader').download
 const Scraper = require('./Scraper.js')
 
 /** @type array */
-const albums = require('../out/Albums.json')
+const albums = require('../out/BareAlbums.json')
 const messages = require('../out/BareMessages.json')
 const config = require('../config/config.json')
 const outDir = path.resolve(__dirname + `/../out`)
 const dataCacheDir = path.join(outDir, 'cache', 'attachments', 'data')
 const fileCacheDir = path.join(outDir, 'cache', 'attachments', 'files')
-const outFilePath = path.join(outDir, `MessagesWithAttachments.json`)
+const albumCacheDir = path.join(outDir, 'cache', 'albums')
+const attachmentOutputPath = path.join(outDir, `MessagesWithAttachments.json`)
+const albumOutputPath = path.join(outDir, `AlbumsWithImages.json`)
 
 const _ = (...messages) => console.log(...messages)
 
@@ -25,16 +26,19 @@ const _ = (...messages) => console.log(...messages)
 ;(async () => {
   console.log('Launching browser...')
   const browser = await puppeteer.launch({...config, slowMo: 50})
-  const scraper = new Scraper({ browser, download })
-
-  _('Logging in...')
+  const scraper = new Scraper({ browser })
 
   await scraper.logIn(config.username, config.password)
 
   _('=======================================================')
-  _('Scraping attachments.')
+  _('Scraping albums')
   _('=======================================================')
-  await scraper.scrapeAttachments(messages, dataCacheDir, fileCacheDir, outFilePath)
+  await scraper.scrapeAlbums(albums, albumCacheDir, albumOutputPath)
+
+  _('=======================================================')
+  _('Scraping attachments')
+  _('=======================================================')
+  // await scraper.scrapeAttachments(messages, dataCacheDir, fileCacheDir, attachmentOutputPath)
 
   _('Closing browser...')
   await browser.close()

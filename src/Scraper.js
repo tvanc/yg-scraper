@@ -4,6 +4,7 @@
  */
 const fs = require('fs-extra')
 const path = require('path')
+const download = require('puppeteer-file-downloader').download
 
 /**
  *
@@ -25,13 +26,78 @@ class Scraper {
 
   #page
 
-  constructor ({ browser, download, dataCacheDir, fileCacheDir, outFilePath }) {
+  constructor ({ browser, dataCacheDir, fileCacheDir, outFilePath }) {
     this.browser = browser
     this.download = download
 
     this.dataCacheDir = dataCacheDir
     this.fileCacheDir = fileCacheDir
     this.outFilePath = outFilePath
+  }
+
+  async scrapeAlbums (albums, albumCacheDir, jsonOutputPath) {
+    const page = await this.getPage()
+    const _ = (...messages) => console.log(...messages)
+    const hydratedAlbums = []
+
+    let failures = 0
+
+    for (const album of albums) {
+      const albumDir = path.join(albumCacheDir, album.albumId + '')
+      const images = []
+
+      fs.ensureDirSync(albumDir)
+
+      for (const uri of album.imageUris) {
+        try {
+          const originalFileName = getFileName(uri)
+          const imageId = uri.split('/')[7]
+          const to = path.join(albumDir, imageId)
+
+          if (fs.existsSync(to)) {
+            _(`Found in cache: ${uri}`)
+          } else {
+
+            _(`Downloading ${uri} => ${to}`)
+            await download({
+              file: uri,
+              onPage: page,
+              to
+            })
+          }
+
+          images.push({
+            originalFileName,
+            imageId,
+            downloadUrl: uri,
+            localPath: to
+          })
+        } catch (exception) {
+          const albumJson = JSON.stringify(album, null, 2)
+          console.error('-----------------------------------------------------')
+          console.error(
+            `Failed downloading ${uri} from album #${album.albumId}: ${albumJson}\n`,
+            exception
+          )
+          console.error('-----------------------------------------------------')
+
+          ++failures
+        }
+      }
+
+      hydratedAlbums.push({
+        name: album.name,
+        albumId: album.albumId,
+        images
+      })
+    }
+
+    await fs.writeJson(jsonOutputPath, hydratedAlbums, ...this.jsonWriteArgs)
+
+    return {
+      albums: hydratedAlbums,
+      failures,
+    }
   }
 
   async scrapeAttachments (messages, dataCacheDir, fileCacheDir, outFilePath) {
@@ -76,12 +142,7 @@ class Scraper {
             const author = context.querySelector('.thumb-meta').textContent.trim()
             const downloadLink = context.querySelector('a[href^="https://xa.yimg.com/"]')
             const downloadUrl = downloadLink.href
-            const qsIndex = downloadUrl.indexOf('?')
-
-            const fileName = downloadUrl.substring(
-              downloadUrl.lastIndexOf('/') + 1,
-              qsIndex !== -1 ? qsIndex : undefined
-            )
+            const fileName = getFileName(downloadUrl)
 
             return {
               fileName,
@@ -98,13 +159,13 @@ class Scraper {
           const to = path.join(pageDir, file.fileName)
 
           if (fs.existsSync(to)) {
-            _(`Found file in cache: ${file.downloadUrl}`)
+            _(`Found in cache: ${file.downloadUrl}`)
           } else {
             fs.ensureDirSync(pageDir)
             file.localPath = to
 
             _(`Downloading ${file.downloadUrl} => ${to}`)
-            await this.download({
+            await download({
               file: file.downloadUrl,
               onPage: page,
               to
@@ -137,7 +198,7 @@ class Scraper {
     _('')
     _(`Completed with ${failureCount} failures.`)
     _('')
-    _(`${attachmentCount} Attachments for ${messageCount - failureCount}/${messageCount} messages scraped successfully.`)
+    _(`Downloaded ${attachmentCount} attachments for ${messageCount - failureCount}/${messageCount} messages.`)
     _('')
     _('Complete list of attachment-download links written to:')
     _(`${outFilePath}`)
@@ -173,7 +234,6 @@ class Scraper {
       page.waitForNavigation({ waitUntil: 'networkidle0' })
     ])
 
-
     _('Submitting username...')
     await page.type(usernameFieldSelector, username)
     await page.waitFor(usernameSubmitSelector + ':enabled')
@@ -200,4 +260,16 @@ class Scraper {
   }
 }
 
+function getFileName (uri) {
+  const qsIndex = uri.indexOf('?')
+
+  return decodeURIComponent(
+    uri.substring(
+      uri.lastIndexOf('/') + 1,
+      qsIndex !== -1 ? qsIndex : undefined
+    )
+  )
+}
+
 module.exports = Scraper
+
