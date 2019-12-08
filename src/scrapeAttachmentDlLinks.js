@@ -38,7 +38,7 @@ const _ = (...messages) => console.log(...messages)
   _('=======================================================')
   _('Scraping attachments')
   _('=======================================================')
-  // await scraper.scrapeAttachments(messages, dataCacheDir, fileCacheDir, attachmentOutputPath)
+  await scraper.scrapeAttachments(messages, dataCacheDir, fileCacheDir, attachmentOutputPath)
 
   _('Closing browser...')
   await browser.close()
