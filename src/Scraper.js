@@ -28,7 +28,6 @@ class Scraper {
 
   constructor ({ browser, dataCacheDir, fileCacheDir, outFilePath }) {
     this.browser = browser
-    this.download = download
 
     this.dataCacheDir = dataCacheDir
     this.fileCacheDir = fileCacheDir
@@ -150,6 +149,17 @@ class Scraper {
               downloadUrl
             }
           })
+
+          function getFileName (uri) {
+            const qsIndex = uri.indexOf('?')
+
+            return decodeURIComponent(
+              uri.substring(
+                uri.lastIndexOf('/') + 1,
+                qsIndex !== -1 ? qsIndex : undefined
+              )
+            )
+          }
 
           return { messageId, files }
         })
